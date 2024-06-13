@@ -17,6 +17,17 @@ Welcome to the Text Summarization with AI repository! This project, developed as
 Ensure you have the following installed:
 - Python 3.7 or later
 - Pip (Python package installer)
+- # Text Summarization Project
+
+
+## Setup
+
+### 1. Clone the Repository
+
+```sh
+git clone https://github.com/nebucthomas2003/Text_Summarization.git
+cd Text_Summarization
+
 
 ### Installation
 
