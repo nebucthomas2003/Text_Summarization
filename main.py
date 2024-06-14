@@ -6,7 +6,6 @@ import logging
 import matplotlib.pyplot as plt
 from collections import Counter
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, Trainer, TrainingArguments
-import torch
 from torch.utils.data import Dataset, DataLoader
 from rouge_score import rouge_scorer
 
@@ -198,3 +197,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
