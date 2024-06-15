@@ -5,7 +5,7 @@ import nltk
 import logging
 import matplotlib.pyplot as plt
 from collections import Counter
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, Trainer, TrainingArguments
+from transformers import BartTokenizer, BartForConditionalGeneration, Trainer, TrainingArguments
 from torch.utils.data import Dataset, DataLoader
 from rouge_score import rouge_scorer
 
@@ -109,7 +109,14 @@ class SummarizationDataset(Dataset):
 
 def generate_summary(model, tokenizer, text, max_length=150):
     inputs = tokenizer(text, return_tensors='pt', max_length=512, truncation=True)
-    summary_ids = model.generate(inputs['input_ids'], max_length=max_length, min_length=30, length_penalty=2.0, num_beams=4, early_stopping=True)
+    summary_ids = model.generate(
+        inputs['input_ids'], 
+        max_length=max_length, 
+        min_length=30, 
+        length_penalty=2.0, 
+        num_beams=4,   # Increased num_beams for better results
+        early_stopping=True
+    )
     return tokenizer.decode(summary_ids[0], skip_special_tokens=True)
 
 def calculate_rouge_scores(reference_summaries, generated_summaries):
@@ -151,22 +158,22 @@ def main():
         validation_df = validation_df.sample(n=100, random_state=42)
 
         # Load tokenizer and tokenize data
-        tokenizer = AutoTokenizer.from_pretrained('t5-small')
+        tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')  # Use smaller BART tokenizer
         inputs = tokenize_data(validation_df, tokenizer, max_input_length=256, max_output_length=128)
 
         # Create dataset and dataloader
         dataset = SummarizationDataset(inputs)
-        dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
+        dataloader = DataLoader(dataset, batch_size=2, shuffle=True)  # Reduce batch size to 2
 
         # Load model
-        model = AutoModelForSeq2SeqLM.from_pretrained('t5-small')
+        model = BartForConditionalGeneration.from_pretrained('facebook/bart-base')  # Use smaller BART model
 
-        # Define training arguments
+        # Define training arguments with increased epochs and other parameters
         training_args = TrainingArguments(
             output_dir='./results',          # Output directory
-            num_train_epochs=1,              # Number of training epochs
-            per_device_train_batch_size=4,   # Batch size for training
-            per_device_eval_batch_size=4,    # Batch size for evaluation
+            num_train_epochs=20,             # Increase the number of training epochs
+            per_device_train_batch_size=2,   # Reduce batch size for training
+            per_device_eval_batch_size=2,    # Reduce batch size for evaluation
             warmup_steps=500,                # Number of warmup steps for learning rate scheduler
             weight_decay=0.01,               # Strength of weight decay
             logging_dir='./logs',            # Directory for storing logs
@@ -185,6 +192,10 @@ def main():
 
         trainer.train()
 
+        # Save model and tokenizer
+        model.save_pretrained('./saved_model')
+        tokenizer.save_pretrained('./saved_model')
+
         # Generate summaries and calculate ROUGE scores
         reference_summaries = validation_df['highlights'].tolist()
         generated_summaries = [generate_summary(model, tokenizer, text) for text in validation_df['cleaned_text'].tolist()]
@@ -197,4 +208,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
