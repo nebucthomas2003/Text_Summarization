@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 nltk.download('punkt')
 
 def load_dataset(file_path):
+    """Load dataset from CSV file."""
     try:
         df = pd.read_csv(file_path)
         logging.info(f"Dataset loaded successfully from {file_path}")
@@ -25,6 +26,7 @@ def load_dataset(file_path):
         return None
 
 def clean_text(text):
+    """Clean text by removing HTML tags, extra spaces, and non-alphanumeric characters."""
     text = re.sub(r'<[^>]+>', '', text)  # Remove HTML tags
     text = re.sub(r'\s+', ' ', text)     # Replace multiple spaces with a single space
     text = text.lower()                  # Convert to lowercase
@@ -32,6 +34,7 @@ def clean_text(text):
     return text
 
 def preprocess_dataset(df):
+    """Preprocess dataset by dropping NaN values, tokenizing sentences, and cleaning text."""
     if 'article' not in df.columns:
         logging.error("'article' column is missing from the dataset")
         return df
@@ -43,6 +46,7 @@ def preprocess_dataset(df):
     return df
 
 def plot_article_length_distribution(df):
+    """Plot distribution of article lengths."""
     df['article_length'] = df['article'].apply(lambda x: len(x.split()))
     plt.figure(figsize=(10, 6))
     plt.hist(df['article_length'], bins=50, color='blue', edgecolor='black')
@@ -53,6 +57,7 @@ def plot_article_length_distribution(df):
     logging.info("Article length distribution plotted successfully")
 
 def plot_sentence_length_distribution(df):
+    """Plot distribution of sentence lengths."""
     df['sentence_lengths'] = df['sentences'].apply(lambda x: [len(sentence.split()) for sentence in x])
     sentence_lengths = [length for sublist in df['sentence_lengths'] for length in sublist]
     plt.figure(figsize=(10, 6))
@@ -64,6 +69,7 @@ def plot_sentence_length_distribution(df):
     logging.info("Sentence length distribution plotted successfully")
 
 def plot_most_common_words(df):
+    """Plot most common words in the dataset."""
     all_words = df['cleaned_text'].apply(lambda x: x.split()).tolist()
     all_words = [word for sublist in all_words for word in sublist]
     word_counts = Counter(all_words)
@@ -79,6 +85,7 @@ def plot_most_common_words(df):
     logging.info("Most common words plotted successfully")
 
 def tokenize_data(df, tokenizer, max_input_length=512, max_output_length=150):
+    """Tokenize data using a tokenizer (BART in this case)."""
     inputs = tokenizer(
         df['cleaned_text'].tolist(), 
         max_length=max_input_length, 
@@ -97,6 +104,7 @@ def tokenize_data(df, tokenizer, max_input_length=512, max_output_length=150):
     return inputs
 
 class SummarizationDataset(Dataset):
+    """Custom dataset class for summarization."""
     def __init__(self, encodings):
         self.encodings = encodings
 
@@ -108,6 +116,7 @@ class SummarizationDataset(Dataset):
         return item
 
 def generate_summary(model, tokenizer, text, max_length=150):
+    """Generate summary using a pre-trained BART model."""
     inputs = tokenizer(text, return_tensors='pt', max_length=512, truncation=True)
     summary_ids = model.generate(
         inputs['input_ids'], 
@@ -120,6 +129,7 @@ def generate_summary(model, tokenizer, text, max_length=150):
     return tokenizer.decode(summary_ids[0], skip_special_tokens=True)
 
 def calculate_rouge_scores(reference_summaries, generated_summaries):
+    """Calculate ROUGE scores for generated summaries compared to reference summaries."""
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
     rouge1_scores = []
     rouge2_scores = []
