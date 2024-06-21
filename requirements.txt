@@ -9,7 +9,7 @@ Libraries Needed for the project
 
 
 *********************************************************************************************
-Certainly! Here's a detailed explanation of each library/module you've mentioned and its purpose in the context of text summarization and data handling:
+ Here's a detailed explanation of each library/module you've mentioned and its purpose in the context of text summarization and data handling:
 
 ### 1. pandas
 
