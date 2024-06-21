@@ -1,4 +1,4 @@
-Certainly! Here is a revised version of your README file with detailed instructions, including the specific file names and descriptions of the app's functionalities:
+
 
 ---
 
@@ -87,6 +87,4 @@ Special thanks to the internship mentors and my teammates for their support and 
 
 Feel free to modify this template to better suit the specifics of your project.
 
-### Summary
 
-This README file provides a comprehensive overview of the text summarization project, including setup instructions, usage guidelines, and file descriptions. It helps users understand how to run the application, generate summaries, and evaluate their quality, making it easier for them to get started and contribute to the project.
