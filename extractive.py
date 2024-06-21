@@ -4,70 +4,79 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 from heapq import nlargest
 import numpy as np
-import networkx as nx
-import pickle
 from summa import summarizer
-from rouge import Rouge
+from rouge import Rouge  # Importing Rouge for ROUGE evaluation
+import pickle
 
 # Download necessary NLTK data
 nltk.download('punkt')
 nltk.download('stopwords')
 
 def preprocess_text(text):
-    stop_words = set(stopwords.words('english'))
-    sentences = sent_tokenize(text)
+    """Preprocesses text by tokenizing sentences, removing stopwords, and cleaning each sentence."""
+    stop_words = set(stopwords.words('english'))  # Get English stopwords
+    sentences = sent_tokenize(text)  # Tokenize into sentences
     cleaned_sentences = []
 
     for sentence in sentences:
-        words = word_tokenize(sentence)
-        words = [word.lower() for word in words if word.isalnum()]
-        words = [word for word in words if word not in stop_words]
-        cleaned_sentences.append(' '.join(words))
+        words = word_tokenize(sentence)  # Tokenize each sentence into words
+        words = [word.lower() for word in words if word.isalnum()]  # Lowercase and remove non-alphanumeric tokens
+        words = [word for word in words if word not in stop_words]  # Remove stopwords
+        cleaned_sentences.append(' '.join(words))  # Join words back into sentences
     
     return sentences, cleaned_sentences
 
 def compute_tfidf(sentences):
+    """Computes TF-IDF scores for sentences."""
     vectorizer = TfidfVectorizer(stop_words='english', max_df=0.85, min_df=0.1, ngram_range=(1, 2))
-    X = vectorizer.fit_transform(sentences)
-    return vectorizer, X
+    X = vectorizer.fit_transform(sentences)  # Fit and transform sentences to TF-IDF matrix
+    return vectorizer, X  # Return TF-IDF vectorizer and matrix
 
 def rank_sentences_with_scores(sentences, original_sentences, top_n=5):
-    vectorizer, tfidf_matrix = compute_tfidf(sentences)
-    scores = tfidf_matrix.sum(axis=1).flatten()
-    ranked_indices = nlargest(top_n, range(len(scores)), scores.take)
-    ranked_sentences = [original_sentences[i] for i in ranked_indices]
-    ranked_scores = [scores[i] for i in ranked_indices]
-    return ranked_sentences, ranked_scores, vectorizer
+    """Ranks sentences based on TF-IDF scores."""
+    vectorizer, tfidf_matrix = compute_tfidf(sentences)  # Compute TF-IDF matrix
+    scores = tfidf_matrix.sum(axis=1).flatten()  # Calculate sum of TF-IDF scores for each sentence
+    ranked_indices = nlargest(top_n, range(len(scores)), scores.take)  # Get indices of top-n sentences based on scores
+    ranked_sentences = [original_sentences[i] for i in ranked_indices]  # Get top-n original sentences
+    ranked_scores = [scores[i] for i in ranked_indices]  # Get scores corresponding to top-n sentences
+    return ranked_sentences, ranked_scores, vectorizer  # Return top-n sentences, scores, and TF-IDF vectorizer
 
 def summarize_with_tfidf(text, top_n=5):
-    original_sentences, cleaned_sentences = preprocess_text(text)
-    summary_sentences, _, vectorizer = rank_sentences_with_scores(cleaned_sentences, original_sentences, top_n)
-    return summary_sentences, vectorizer
+    """Summarizes text using TF-IDF extractive summarization."""
+    original_sentences, cleaned_sentences = preprocess_text(text)  # Preprocess text
+    summary_sentences, _, vectorizer = rank_sentences_with_scores(cleaned_sentences, original_sentences, top_n)  # Get summary sentences
+    return summary_sentences, vectorizer  # Return summary sentences and TF-IDF vectorizer
 
 def textrank_summarize(text, ratio=0.3):
-    summary = summarizer.summarize(text, ratio=ratio)
-    return summary.split('\n')
+    """Summarizes text using TextRank extractive summarization."""
+    summary = summarizer.summarize(text, ratio=ratio)  # Summarize text using TextRank
+    return summary.split('\n')  # Split summary into sentences and return
 
 def evaluate_with_rouge(generated_summary, expected_summary):
-    rouge = Rouge()
-    scores = rouge.get_scores(generated_summary, expected_summary)
-    return scores
+    """Evaluates generated summary against expected summary using ROUGE metrics."""
+    rouge = Rouge()  # Initialize Rouge object
+    scores = rouge.get_scores(generated_summary, expected_summary)  # Calculate ROUGE scores
+    return scores  # Return ROUGE scores
 
 def save_model(vectorizer, filename='tfidf_model.pkl'):
+    """Saves TF-IDF vectorizer to a pickle file."""
     with open(filename, 'wb') as file:
-        pickle.dump(vectorizer, file)
-        
+        pickle.dump(vectorizer, file)  # Dump vectorizer object to file
+
 def load_model(filename='tfidf_model.pkl'):
+    """Loads TF-IDF vectorizer from a pickle file."""
     with open(filename, 'rb') as file:
-        return pickle.load(file)
+        return pickle.load(file)  # Load vectorizer object from file
 
 def save_similarity_matrix(matrix, filename='similarity_matrix.pkl'):
+    """Saves similarity matrix to a pickle file."""
     with open(filename, 'wb') as file:
-        pickle.dump(matrix, file)
-        
+        pickle.dump(matrix, file)  # Dump similarity matrix object to file
+
 def load_similarity_matrix(filename='similarity_matrix.pkl'):
+    """Loads similarity matrix from a pickle file."""
     with open(filename, 'rb') as file:
-        return pickle.load(file)
+        return pickle.load(file)  # Load similarity matrix object from file
 
 # Example usage
 if __name__ == "__main__":
