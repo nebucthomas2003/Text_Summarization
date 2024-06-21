@@ -1,15 +1,16 @@
+# Import necessary libraries
 import gradio as gr
-from transformers import BartForConditionalGeneration, BartTokenizer
-import nltk
-from nltk.corpus import stopwords
-from nltk.tokenize import sent_tokenize, word_tokenize
-from sklearn.feature_extraction.text import TfidfVectorizer
-from heapq import nlargest
+from transformers import BartForConditionalGeneration, BartTokenizer  # Transformers for BART model
+import nltk  # Natural Language Toolkit for text processing
+from nltk.corpus import stopwords  # Stopwords for text preprocessing
+from nltk.tokenize import sent_tokenize, word_tokenize  # Tokenizers for sentence and word tokenization
+from sklearn.feature_extraction.text import TfidfVectorizer  # TF-IDF vectorizer for extractive summarization
+from heapq import nlargest  # For ranking sentences based on TF-IDF scores
+from summa import summarizer  # TextRank summarizer from Summa
+from rouge_score import rouge_scorer  # For ROUGE evaluation
 import numpy as np
-from summa import summarizer
-from rouge_score import rouge_scorer
 
-# Download necessary NLTK data
+# Download NLTK data if not already downloaded
 nltk.download('punkt')
 nltk.download('stopwords')
 
@@ -19,6 +20,7 @@ tokenizer = BartTokenizer.from_pretrained(saved_model_directory)
 model = BartForConditionalGeneration.from_pretrained(saved_model_directory)
 
 def preprocess_text(text):
+    """Preprocesses text by tokenizing sentences, removing stopwords, and cleaning each sentence."""
     stop_words = set(stopwords.words('english'))
     sentences = sent_tokenize(text)
     cleaned_sentences = []
@@ -32,11 +34,13 @@ def preprocess_text(text):
     return sentences, cleaned_sentences
 
 def compute_tfidf(sentences):
+    """Computes TF-IDF scores for sentences."""
     vectorizer = TfidfVectorizer(stop_words='english', max_df=0.85, min_df=0.1, ngram_range=(1, 2))
     X = vectorizer.fit_transform(sentences)
     return vectorizer, X
 
 def rank_sentences_with_scores(sentences, original_sentences, top_n=5):
+    """Ranks sentences based on TF-IDF scores."""
     vectorizer, tfidf_matrix = compute_tfidf(sentences)
     scores = tfidf_matrix.sum(axis=1).flatten()
     ranked_indices = nlargest(top_n, range(len(scores)), scores.take)
@@ -45,15 +49,18 @@ def rank_sentences_with_scores(sentences, original_sentences, top_n=5):
     return ranked_sentences, ranked_scores, vectorizer
 
 def summarize_with_tfidf(text, top_n=5):
+    """Summarizes text using TF-IDF extractive summarization."""
     original_sentences, cleaned_sentences = preprocess_text(text)
     summary_sentences, _, vectorizer = rank_sentences_with_scores(cleaned_sentences, original_sentences, top_n)
     return summary_sentences
 
 def textrank_summarize(text, ratio=0.3):
+    """Summarizes text using TextRank extractive summarization."""
     summary = summarizer.summarize(text, ratio=ratio)
     return summary.split('\n')
 
 def abstractive_summarize(article):
+    """Summarizes text using abstractive BART model."""
     inputs = tokenizer(article, return_tensors='pt', max_length=512, truncation=True)
     summary_ids = model.generate(
         inputs['input_ids'],
@@ -67,6 +74,7 @@ def abstractive_summarize(article):
     return summary
 
 def summarize(article, summarization_type):
+    """Routes text summarization based on selected type."""
     if summarization_type == "Abstractive":
         return abstractive_summarize(article)
     elif summarization_type == "Extractive (TF-IDF)":
@@ -77,6 +85,7 @@ def summarize(article, summarization_type):
         return " ".join(textrank_summary)
 
 def evaluate_with_rouge(generated_summary, expected_summary):
+    """Evaluates generated summary against expected summary using ROUGE metrics."""
     scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
     scores = scorer.score(generated_summary, expected_summary)
     return scores
