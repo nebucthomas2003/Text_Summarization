@@ -79,9 +79,7 @@ cd Text_Summarization
 
 Contributions are welcome! Whether you have bug fixes, new features, or improvements to existing functionality, feel free to submit a pull request. Please ensure your contributions align with the project's guidelines.
 
-## Acknowledgments
 
-Special thanks to the internship mentors and my teammates for their support and contributions to the field of text summarization.
 
 ---
 
