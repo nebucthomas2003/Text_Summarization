@@ -3,10 +3,8 @@ from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize, word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 from heapq import nlargest
-from summa import summarizer
 from rouge import Rouge
 import pickle
-import re
 
 # Download necessary NLTK data
 nltk.download('punkt')
@@ -60,6 +58,7 @@ def rank_sentences_with_scores(sentences, original_sentences, top_n=5):
     vectorizer, tfidf_matrix = compute_tfidf(sentences)  # Compute TF-IDF matrix
     scores = tfidf_matrix.sum(axis=1).flatten()  # Calculate sum of TF-IDF scores for each sentence
     ranked_indices = nlargest(top_n, range(len(scores)), scores.take)  # Get indices of top-n sentences based on scores
+    ranked_indices = sorted(ranked_indices)  # Ensure the selected sentences maintain the original order
     ranked_sentences = [original_sentences[i] for i in ranked_indices]  # Get top-n original sentences
     ranked_scores = [scores[i] for i in ranked_indices]  # Get scores corresponding to top-n sentences
     return ranked_sentences, ranked_scores, vectorizer  # Return top-n sentences, scores, and TF-IDF vectorizer
@@ -152,18 +151,23 @@ def load_similarity_matrix(filename='similarity_matrix.pkl'):
 # Example usage
 if __name__ == "__main__":
     text = """
-    Infosys is a global leader in next-generation digital services and consulting. 
-    We enable clients in more than 50 countries to navigate their digital transformation. 
-    With over four decades of experience in managing the systems and workings of global enterprises, 
-    we expertly steer our clients through their digital journey. We do it by enabling the enterprise 
-    with an AI-powered core that helps prioritize the execution of change. We also empower the business 
-    with agile digital at scale to deliver unprecedented levels of performance and customer delight. 
-    Our always-on learning agenda drives their continuous improvement through building and 
-    transferring digital skills, expertise, and ideas from our innovation ecosystem. 
+    Beyond learning paths and certification programs, Red Hat offers several resources and support mechanisms to assist professionals in their careers:
+
+    Community Engagement: Red Hat fosters a vibrant community of developers, administrators, and users through forums, mailing lists, and events. Engaging with this community provides opportunities for networking, knowledge sharing, and collaboration on open-source projects.
+
+    Technical Support: Red Hat provides comprehensive technical support services to customers and subscribers. This support includes assistance with troubleshooting, performance optimization, and guidance on best practices for deploying and managing Red Hat products and solutions.
+
+    Training and Workshops: In addition to formal learning paths, Red Hat offers workshops, webinars, and training sessions on various topics related to open-source technologies, DevOps practices, and emerging trends in the IT industry. These sessions provide hands-on experience and practical insights that can enhance your skills and expertise.
+
+    Career Resources: Red Hat may offer career resources such as job boards, career fairs, and networking events specifically tailored to professionals working with open-source technologies. These resources can help you explore job opportunities, connect with potential employers, and advance your career in the field.
+
+    Partnerships and Ecosystem: Red Hat collaborates with a broad ecosystem of technology partners, system integrators, and service providers. Leveraging these partnerships can offer access to additional resources, tools, and expertise that complement Red Hat's offerings and support your professional development goals.
+
+    Overall, Red Hat aims to support professionals in their professional life by providing a holistic ecosystem of resources, support services, and opportunities for learning, growth, and advancement within the open-source community and the broader IT industry.
     """
 
     # Generate TF-IDF summary
-    tfidf_summary, vectorizer = summarize_with_tfidf(text)
+    tfidf_summary, vectorizer = summarize_with_tfidf(text, top_n=5)
     print("TF-IDF Summary:\n")
     print("\n".join(tfidf_summary))
 
@@ -179,7 +183,7 @@ if __name__ == "__main__":
     print("\n".join(textrank_summary))
 
     # Evaluate summaries with ROUGE
-    expected_summary = "Infosys is a global leader in next-generation digital services and consulting."
+    expected_summary = "Red Hat offers several resources and support mechanisms to assist professionals in their careers."
     tfidf_scores = evaluate_with_rouge(" ".join(tfidf_summary), expected_summary)
     textrank_scores = evaluate_with_rouge(" ".join(textrank_summary), expected_summary)
 
