@@ -6,6 +6,9 @@ import json
 def authenticate_drive():
     # Save credentials to a file
     credentials = os.getenv('GDRIVE_CREDENTIALS')
+    if not credentials:
+        raise ValueError("GDRIVE_CREDENTIALS environment variable not set.")
+    
     with open('credentials.json', 'w') as f:
         f.write(credentials)
     
@@ -19,19 +22,20 @@ def list_files_in_folder(drive, folder_id):
     file_list = drive.ListFile({'q': f"'{folder_id}' in parents and trashed=false"}).GetList()
     return file_list
 
-def download_file_from_folder(drive, folder_id, file_name, destination):
+def download_files_from_folder(drive, folder_id, destination_folder):
     file_list = list_files_in_folder(drive, folder_id)
+    if not os.path.exists(destination_folder):
+        os.makedirs(destination_folder)
+    
     for file in file_list:
-        if file['title'] == file_name:
-            file.GetContentFile(destination)
-            print(f"Downloaded {file_name} to {destination}")
-            return
-    print(f"File {file_name} not found in the folder.")
+        file_path = os.path.join(destination_folder, file['title'])
+        file.GetContentFile(file_path)
+        print(f"Downloaded {file['title']} to {file_path}")
 
 if __name__ == "__main__":
-    folder_id = '1Ba65pa0dbWpKPufLFr0bHI-DUJwy568s'  # Replace with your folder ID
-    file_name = 'env'  # The name of the file you want to download
-    destination = 'env'  # The destination where you want to save the file
+    folder_id = '1FV4QtW0oX-mXCCdgsRxEASrETJG-5N4_'  # Replace with your folder ID
+    destination_folder = 'env_files'  # The destination folder to save the files
     
     drive = authenticate_drive()
-    download_file_from_folder(drive, folder_id, file_name, destination)
+    download_files_from_folder(drive, folder_id, destination_folder)
+    print("All files downloaded.")
