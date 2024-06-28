@@ -83,6 +83,4 @@ Contributions are welcome! Whether you have bug fixes, new features, or improvem
 
 ---
 
-Feel free to modify this template to better suit the specifics of your project.
-
 
