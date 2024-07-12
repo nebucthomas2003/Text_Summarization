@@ -1,0 +1,6 @@
+{
+    "model_type": "bert",
+    "vocab_size": 30522,
+    "max_len": 512
+  }
+  

@@ -1,20 +1,20 @@
-# Import necessary libraries
-import gradio as gr
-from transformers import BartForConditionalGeneration, BartTokenizer  # Transformers for BART model
-import nltk  # Natural Language Toolkit for text processing
-from nltk.corpus import stopwords  # Stopwords for text preprocessing
-from nltk.tokenize import sent_tokenize, word_tokenize  # Tokenizers for sentence and word tokenization
-from sklearn.feature_extraction.text import TfidfVectorizer  # TF-IDF vectorizer for extractive summarization
-from heapq import nlargest  # For ranking sentences based on TF-IDF scores
-from summa import summarizer  # TextRank summarizer from Summa
-from rouge_score import rouge_scorer  # For ROUGE evaluation
+import streamlit as st
+from transformers import BartForConditionalGeneration, BartTokenizer
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import sent_tokenize, word_tokenize
+from sklearn.feature_extraction.text import TfidfVectorizer
+from heapq import nlargest
+from summa import summarizer
+from rouge_score import rouge_scorer
 import numpy as np
+import os
 
 # Download NLTK data if not already downloaded
-nltk.download('punkt')
-nltk.download('stopwords')
+nltk.download('punkt', quiet=True)
+nltk.download('stopwords', quiet=True)
 
-# Load saved model and tokenizer for abstractive summarization
+# Load BART Model and Tokenizer
 saved_model_directory = './saved_model'
 tokenizer = BartTokenizer.from_pretrained(saved_model_directory)
 model = BartForConditionalGeneration.from_pretrained(saved_model_directory)
@@ -52,7 +52,7 @@ def summarize_with_tfidf(text, top_n=5):
     """Summarizes text using TF-IDF extractive summarization."""
     original_sentences, cleaned_sentences = preprocess_text(text)
     summary_sentences, _, vectorizer = rank_sentences_with_scores(cleaned_sentences, original_sentences, top_n)
-    return summary_sentences
+    return " ".join(summary_sentences)
 
 def textrank_summarize(text, ratio=0.3):
     """Summarizes text using TextRank extractive summarization."""
@@ -78,29 +78,22 @@ def summarize(article, summarization_type):
     if summarization_type == "Abstractive":
         return abstractive_summarize(article)
     elif summarization_type == "Extractive (TF-IDF)":
-        tfidf_summary = summarize_with_tfidf(article)
-        return " ".join(tfidf_summary)
+        return summarize_with_tfidf(article)
     elif summarization_type == "Extractive (TextRank)":
-        textrank_summary = textrank_summarize(article)
-        return " ".join(textrank_summary)
+        return " ".join(textrank_summarize(article))
 
-def evaluate_with_rouge(generated_summary, expected_summary):
-    """Evaluates generated summary against expected summary using ROUGE metrics."""
-    scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
-    scores = scorer.score(generated_summary, expected_summary)
-    return scores
+def main():
+    st.title('Text Summarization')
+    st.markdown("Enter the article text to generate a summary.")
 
-# Create Gradio Interface
-interface = gr.Interface(
-    fn=summarize,
-    inputs=[
-        gr.Textbox(lines=10, label="Article Text"),
-        gr.Radio(["Abstractive", "Extractive (TF-IDF)", "Extractive (TextRank)"], label="Summarization Type")
-    ],
-    outputs=gr.Textbox(label="Summary"),
-    title="Text Summarization",
-    description="Enter the article text to generate a summary."
-)
+    article_text = st.text_area('Article Text', height=300)
+    summarization_type = st.radio("Summarization Type", ["Abstractive", "Extractive (TF-IDF)", "Extractive (TextRank)"])
 
-if __name__ == "__main__":
-    interface.launch()
+    if st.button('Generate Summary'):
+        if article_text:
+            summary = summarize(article_text, summarization_type)
+            st.subheader('Summary')
+            st.write(summary)
+
+if __name__ == '__main__':
+    main()
