@@ -16,8 +16,13 @@ nltk.download('stopwords', quiet=True)
 
 # Load BART Model and Tokenizer
 saved_model_directory = './saved_model'
-tokenizer = BartTokenizer.from_pretrained(saved_model_directory)
-model = BartForConditionalGeneration.from_pretrained(saved_model_directory)
+
+try:
+    tokenizer = BartTokenizer.from_pretrained(saved_model_directory)
+    model = BartForConditionalGeneration.from_pretrained(saved_model_directory)
+except Exception as e:
+    st.error(f"Error loading model and tokenizer: {e}")
+    st.stop()
 
 def preprocess_text(text):
     """Preprocesses text by tokenizing sentences, removing stopwords, and cleaning each sentence."""

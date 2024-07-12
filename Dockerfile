@@ -7,16 +7,13 @@ WORKDIR /app
 COPY requirements.txt /app/
 
 # Install dependencies with retry and increased timeout
-RUN pip install --no-cache-dir --default-timeout=100 torch==1.9.0
+RUN pip install --no-cache-dir --default-timeout=100 streamlit==1.36.0
 
 # Install other dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code
 COPY . /app
-
-# Copy the saved model files
-COPY saved_model /app/saved_model
 
 # Expose the Streamlit port
 EXPOSE 8501

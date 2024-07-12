@@ -1,15 +1,13 @@
-import torch
-from transformers import BartForConditionalGeneration, BartTokenizer
+from transformers import BartTokenizer, BartForConditionalGeneration
 
-# Initialize your model and tokenizer
-model = BartForConditionalGeneration.from_pretrained('facebook/bart-large-cnn')
-tokenizer = BartTokenizer.from_pretrained('facebook/bart-large-cnn')
+# Define the model name
+model_name = "facebook/bart-large-cnn"
 
-# Save the model's configuration
-model.config.save_pretrained('./saved_model')
+# Download the tokenizer and model
+tokenizer = BartTokenizer.from_pretrained(model_name)
+model = BartForConditionalGeneration.from_pretrained(model_name)
 
-# Save the model's state_dict (weights)
-torch.save(model.state_dict(), './saved_model/pytorch_model.bin')
-
-# Save the tokenizer's vocabulary and configuration
-tokenizer.save_pretrained('./saved_model')
+# Save the tokenizer and model locally
+save_directory = './saved_model'
+tokenizer.save_pretrained(save_directory)
+model.save_pretrained(save_directory)
